@@ -5,6 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
+  // Extensões em maiúsculas (ex.: .PNG) não são tratadas como assets por padrão
+  assetsInclude: ["**/*.PNG", "**/*.JPG", "**/*.JPEG", "**/*.GIF", "**/*.WEBP"],
   server: {
     host: "::",
     port: 8080,
