@@ -167,7 +167,14 @@ export function ProjectsAdminPanel() {
       }
       toast.success("Arquivo enviado.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha no upload.");
+      const msg = e instanceof Error ? e.message : "";
+      const huge =
+        /413|too large|maximum|size|payload|entity too large|timeout|timed out|network/i.test(msg);
+      toast.error(
+        huge
+          ? "Ficheiro grande ou rede lenta: comprima o vídeo, tente outra rede ou use «Vídeo (embed)» com link do YouTube."
+          : msg || "Falha no upload.",
+      );
     } finally {
       setUploading(null);
     }

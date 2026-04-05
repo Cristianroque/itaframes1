@@ -6,6 +6,9 @@ import { resolveVideoEmbedSrc } from "@/lib/embedUrl";
 import { defaultProjects } from "@/data/projects";
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Altura máxima da mídia no lightbox — usa quase todo o ecrã, preservando proporção. */
+const mediaMaxClass = "max-h-[min(92vh,1080px)] w-full max-w-full";
+
 function ProjectMediaBlock({ item, fallbackAlt }: { item: ProjectMediaItem; fallbackAlt: string }) {
   if (item.type === "image") {
     return (
@@ -15,7 +18,7 @@ function ProjectMediaBlock({ item, fallbackAlt }: { item: ProjectMediaItem; fall
         loading="lazy"
         width={1200}
         height={800}
-        className="w-full rounded-sm object-cover max-h-[min(70vh,520px)] bg-muted"
+        className={`rounded-sm object-contain bg-muted ${mediaMaxClass} h-auto`}
       />
     );
   }
@@ -28,7 +31,7 @@ function ProjectMediaBlock({ item, fallbackAlt }: { item: ProjectMediaItem; fall
         controls
         playsInline
         preload="metadata"
-        className="w-full rounded-sm bg-black max-h-[min(70vh,520px)] object-contain"
+        className={`rounded-sm bg-black object-contain ${mediaMaxClass} h-auto`}
       >
         Seu navegador não suporta reprodução de vídeo.
       </video>
@@ -46,11 +49,11 @@ function ProjectMediaBlock({ item, fallbackAlt }: { item: ProjectMediaItem; fall
   }
 
   return (
-    <div className="aspect-video w-full rounded-sm overflow-hidden bg-black border border-border">
+    <div className="relative aspect-video w-full min-w-0 overflow-hidden rounded-sm bg-black border border-border">
       <iframe
         src={embedSrc}
         title={item.title ?? "Vídeo incorporado"}
-        className="w-full h-full border-0"
+        className="absolute inset-0 h-full w-full border-0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
         loading="lazy"
@@ -164,19 +167,21 @@ const ProjectsSection = ({ projects = defaultProjects, isLoading = false }: Proj
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card rounded-sm max-w-3xl w-full overflow-hidden relative my-8"
+            className="bg-card rounded-sm w-full max-w-[min(100vw-1.5rem,1280px)] overflow-hidden relative my-6 sm:my-8 flex flex-col max-h-[min(96vh,1200px)] shadow-lg border border-border"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
-              onClick={() => setSelectedProject(null)}
-              className="absolute top-4 right-4 z-10 text-foreground/70 hover:text-foreground"
-              aria-label="Fechar"
-            >
-              <X size={24} />
-            </button>
+            <div className="flex shrink-0 items-center justify-end gap-2 border-b border-border bg-card px-3 py-2 sm:px-4 sm:py-3">
+              <button
+                type="button"
+                onClick={() => setSelectedProject(null)}
+                className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                aria-label="Fechar"
+              >
+                <X className="h-6 w-6 sm:h-5 sm:w-5" strokeWidth={2} />
+              </button>
+            </div>
 
-            <div className="p-6 sm:p-8 space-y-6 max-h-[85vh] overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-6 space-y-6">
               <div className="space-y-6">
                 {selectedProject.media.map((item) => (
                   <div key={item.id} className="w-full">
