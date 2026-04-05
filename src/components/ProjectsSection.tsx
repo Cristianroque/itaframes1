@@ -39,7 +39,8 @@ function ProjectMediaBlock({ item, fallbackAlt }: { item: ProjectMediaItem; fall
   if (!embedSrc) {
     return (
       <p className="font-body text-sm text-muted-foreground p-4 border border-border rounded-sm">
-        URL do vídeo em falta ou inválida.
+        Não foi possível incorporar este link. Cole o URL completo do YouTube (página do vídeo, Shorts ou youtu.be) ou do
+        Vimeo.
       </p>
     );
   }

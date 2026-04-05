@@ -1,6 +1,7 @@
 /**
  * Converte links partilháveis (YouTube, Vimeo) em URL adequada para <iframe src>.
- * O YouTube não aceita youtube.com/watch?v=... diretamente no iframe.
+ * Páginas youtube.com/watch, /shorts, youtu.be, etc. enviam X-Frame-Options e não podem
+ * ser usadas diretamente no iframe — só https://www.youtube.com/embed/VIDEO_ID
  */
 
 function withHttps(raw: string): string {
@@ -11,66 +12,71 @@ function withHttps(raw: string): string {
   return `https://${t}`;
 }
 
-function extractYouTubeVideoId(url: URL): string | null {
-  const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+/** IDs do YouTube costumam ter 11 caracteres; aceitamos um intervalo seguro. */
+function isPlausibleYouTubeId(id: string): boolean {
+  return /^[a-zA-Z0-9_-]{10,12}$/.test(id);
+}
 
-  if (host === "youtu.be") {
-    const id = url.pathname.split("/").filter(Boolean)[0];
-    return id || null;
+/**
+ * Extrai o ID do vídeo a partir do texto completo (funciona com youtube.com, youtube.com.br, mobile, etc.).
+ */
+function extractYouTubeVideoIdFromString(input: string): string | null {
+  const s = input.trim();
+
+  const patterns: RegExp[] = [
+    /[?&]v=([a-zA-Z0-9_-]{10,12})\b/,
+    /youtu\.be\/([a-zA-Z0-9_-]{10,12})(?:[?&#/]|$)/i,
+    /youtube\.(?:[a-z.]+\/)?embed\/([a-zA-Z0-9_-]{10,12})(?:[?&#/]|$)/i,
+    /youtube\.(?:[a-z.]+\/)?shorts\/([a-zA-Z0-9_-]{10,12})(?:[?&#/]|$)/i,
+    /youtube\.(?:[a-z.]+\/)?live\/([a-zA-Z0-9_-]{10,12})(?:[?&#/]|$)/i,
+  ];
+
+  for (const re of patterns) {
+    const m = s.match(re);
+    if (m?.[1] && isPlausibleYouTubeId(m[1])) return m[1];
   }
 
-  if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com") {
-    const path = url.pathname;
-    const embedMatch = path.match(/^\/embed\/([^/?]+)/);
-    if (embedMatch) return embedMatch[1];
-    const shortsMatch = path.match(/^\/shorts\/([^/?]+)/);
-    if (shortsMatch) return shortsMatch[1];
-    const liveMatch = path.match(/^\/live\/([^/?]+)/);
-    if (liveMatch) return liveMatch[1];
-    const v = url.searchParams.get("v");
-    if (v) return v;
+  try {
+    const url = new URL(withHttps(s));
+    const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+
+    if (host === "youtu.be") {
+      const id = url.pathname.split("/").filter(Boolean)[0];
+      return id && isPlausibleYouTubeId(id) ? id : null;
+    }
+
+    const isYt =
+      host === "youtube.com" ||
+      host.endsWith(".youtube.com") ||
+      /^youtube\.com\./.test(host);
+
+    if (isYt) {
+      const path = url.pathname;
+      for (const re of [
+        /^\/embed\/([a-zA-Z0-9_-]{10,12})/,
+        /^\/shorts\/([a-zA-Z0-9_-]{10,12})/,
+        /^\/live\/([a-zA-Z0-9_-]{10,12})/,
+      ]) {
+        const m = path.match(re);
+        if (m?.[1]) return m[1];
+      }
+      const v = url.searchParams.get("v");
+      if (v && isPlausibleYouTubeId(v)) return v;
+    }
+  } catch {
+    /* ignorar */
   }
 
   return null;
 }
 
-function extractVimeoId(url: URL): string | null {
-  const host = url.hostname.replace(/^www\./i, "").toLowerCase();
-  if (!host.includes("vimeo.com")) return null;
-  const m = url.pathname.match(/\/(?:video\/)?(\d+)/);
+function extractVimeoIdFromString(input: string): string | null {
+  const m = input.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   return m?.[1] ?? null;
 }
 
-/**
- * Devolve uma URL segura para usar em iframe, ou a string original se já for utilizável.
- */
-export function resolveVideoEmbedSrc(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed) return "";
-
-  try {
-    const url = new URL(withHttps(trimmed));
-    const yt = extractYouTubeVideoId(url);
-    if (yt) {
-      const q = new URLSearchParams(url.search);
-      const t = q.get("t") ?? q.get("start");
-      const base = `https://www.youtube.com/embed/${encodeURIComponent(yt)}`;
-      if (t) {
-        const seconds = parseYouTubeTimestamp(t);
-        if (seconds != null) return `${base}?start=${seconds}&rel=0`;
-      }
-      return `${base}?rel=0`;
-    }
-
-    const vimeo = extractVimeoId(url);
-    if (vimeo) {
-      return `https://player.vimeo.com/video/${encodeURIComponent(vimeo)}`;
-    }
-  } catch {
-    return trimmed;
-  }
-
-  return trimmed;
+function looksLikeYouTubeShareLink(s: string): boolean {
+  return /youtube\.|youtu\.be/i.test(s);
 }
 
 /** Aceita "120", "2m30s", "1h2m3s" aproximado, ou número em segundos. */
@@ -87,4 +93,52 @@ function parseYouTubeTimestamp(t: string): number | null {
     return H + M + S;
   }
   return null;
+}
+
+/**
+ * Devolve URL para iframe, ou "" se não for possível incorporar com segurança.
+ * Nunca devolve /watch ou /shorts (evita X-Frame-Options).
+ */
+export function resolveVideoEmbedSrc(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+
+  const ytId = extractYouTubeVideoIdFromString(trimmed);
+  if (ytId) {
+    let start: number | null = null;
+    try {
+      const url = new URL(withHttps(trimmed));
+      const t = url.searchParams.get("t") ?? url.searchParams.get("start");
+      if (t) start = parseYouTubeTimestamp(t);
+    } catch {
+      /* sem query */
+    }
+    const base = `https://www.youtube.com/embed/${encodeURIComponent(ytId)}`;
+    if (start != null) return `${base}?start=${start}&rel=0`;
+    return `${base}?rel=0`;
+  }
+
+  const vimeoId = extractVimeoIdFromString(trimmed);
+  if (vimeoId) {
+    return `https://player.vimeo.com/video/${encodeURIComponent(vimeoId)}`;
+  }
+
+  try {
+    const url = new URL(withHttps(trimmed));
+    const host = url.hostname.toLowerCase();
+    if (host.includes("player.vimeo.com")) return trimmed;
+
+    const path = url.pathname;
+    if (host.includes("youtube.com") && path.startsWith("/embed/")) {
+      return trimmed.split("#")[0];
+    }
+  } catch {
+    /* continuar */
+  }
+
+  if (looksLikeYouTubeShareLink(trimmed)) {
+    return "";
+  }
+
+  return trimmed;
 }
