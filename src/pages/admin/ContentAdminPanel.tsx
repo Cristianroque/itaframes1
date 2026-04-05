@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAboutPayload, fetchHeroPayload, saveAboutPayload, saveHeroPayload } from "@/api/content";
-import { uploadMediaFile } from "@/api/media";
+import { formatStorageUploadError, uploadMediaFile } from "@/api/media";
 import { cmsQueryKeys } from "@/hooks/useCmsQueries";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import {
@@ -76,14 +76,16 @@ export function ContentAdminPanel() {
 
   const upload = async (file: File, field: "hero-bg" | "hero-photo" | "about") => {
     setUploading(field);
+    const toastId = toast.loading("A enviar imagem…");
     try {
       const url = await uploadMediaFile(file, field === "about" ? "about" : "hero");
       if (field === "hero-bg") setHero((h) => ({ ...h, backgroundImageUrl: url }));
       if (field === "hero-photo") setHero((h) => ({ ...h, photographerImageUrl: url }));
       if (field === "about") setAbout((a) => ({ ...a, imageUrl: url }));
-      toast.success("Upload concluído.");
+      toast.success("Envio concluído.", { id: toastId });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha no upload.");
+      const msg = e instanceof Error ? e.message : formatStorageUploadError(e);
+      toast.error(msg || "Erro ao enviar.", { id: toastId });
     } finally {
       setUploading(null);
     }

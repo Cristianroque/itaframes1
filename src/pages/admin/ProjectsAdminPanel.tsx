@@ -9,7 +9,7 @@ import {
   updateProject,
   type ProjectWriteInput,
 } from "@/api/projects";
-import { uploadMediaFile } from "@/api/media";
+import { formatStorageUploadError, uploadMediaFile } from "@/api/media";
 import { cmsQueryKeys } from "@/hooks/useCmsQueries";
 import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import type { PortfolioProject, ProjectMediaItem } from "@/types/portfolio";
@@ -154,8 +154,12 @@ export function ProjectsAdminPanel() {
 
   const uploadField = async (file: File, kind: "cover" | `media-${number}`) => {
     setUploading(kind);
+    const toastId = toast.loading("A enviar ficheiro…");
     try {
-      const url = await uploadMediaFile(file, "projects");
+      const url = await uploadMediaFile(file, {
+        scope: "project",
+        slot: kind === "cover" ? "cover" : "gallery",
+      });
       if (kind === "cover") setDraft((d) => ({ ...d, cover_image_url: url }));
       else {
         const idx = Number(kind.split("-")[1]);
@@ -165,16 +169,10 @@ export function ProjectsAdminPanel() {
           return { ...d, media };
         });
       }
-      toast.success("Arquivo enviado.");
+      toast.success("Envio concluído.", { id: toastId });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      const huge =
-        /413|too large|maximum|size|payload|entity too large|timeout|timed out|network/i.test(msg);
-      toast.error(
-        huge
-          ? "Ficheiro grande ou rede lenta: comprima o vídeo, tente outra rede ou use «Vídeo (embed)» com link do YouTube."
-          : msg || "Falha no upload.",
-      );
+      const msg = e instanceof Error ? e.message : formatStorageUploadError(e);
+      toast.error(msg || "Erro ao enviar.", { id: toastId });
     } finally {
       setUploading(null);
     }
