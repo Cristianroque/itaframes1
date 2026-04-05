@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import type { PortfolioProject, ProjectMediaItem } from "@/types/portfolio";
+import { resolveVideoEmbedSrc } from "@/lib/embedUrl";
 import { defaultProjects } from "@/data/projects";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -34,14 +35,25 @@ function ProjectMediaBlock({ item, fallbackAlt }: { item: ProjectMediaItem; fall
     );
   }
 
+  const embedSrc = resolveVideoEmbedSrc(item.src);
+  if (!embedSrc) {
+    return (
+      <p className="font-body text-sm text-muted-foreground p-4 border border-border rounded-sm">
+        URL do vídeo em falta ou inválida.
+      </p>
+    );
+  }
+
   return (
     <div className="aspect-video w-full rounded-sm overflow-hidden bg-black border border-border">
       <iframe
-        src={item.src}
+        src={embedSrc}
         title={item.title ?? "Vídeo incorporado"}
         className="w-full h-full border-0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
+        loading="lazy"
+        referrerPolicy="strict-origin-when-cross-origin"
       />
     </div>
   );

@@ -352,7 +352,11 @@ export function ProjectsAdminPanel() {
                     </button>
                   </div>
                   <Input
-                    placeholder="URL"
+                    placeholder={
+                      m.type === "video_embed"
+                        ? "Link do YouTube ou Vimeo (ex.: youtube.com/watch?v=…)"
+                        : "URL"
+                    }
                     value={m.url}
                     onChange={(e) =>
                       setDraft((d) => {
