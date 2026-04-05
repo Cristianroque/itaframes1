@@ -146,7 +146,7 @@ export function ContentAdminPanel() {
               <label className="mt-2 inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.tif,.tiff"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -170,7 +170,7 @@ export function ContentAdminPanel() {
               <label className="mt-2 inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.tif,.tiff"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -237,7 +237,7 @@ export function ContentAdminPanel() {
               <label className="mt-2 inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.tif,.tiff"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];

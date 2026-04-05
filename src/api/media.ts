@@ -14,6 +14,7 @@ export async function uploadMediaFile(file: File, folder = "uploads"): Promise<s
   const { error } = await client.storage.from(BUCKET).upload(path, file, {
     cacheControl: "3600",
     upsert: false,
+    contentType: file.type || "application/octet-stream",
   });
   if (error) throw error;
 

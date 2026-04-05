@@ -286,7 +286,7 @@ export function ProjectsAdminPanel() {
                 <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif"
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
@@ -395,7 +395,11 @@ export function ProjectsAdminPanel() {
                     <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
                       <input
                         type="file"
-                        accept={m.type === "image" ? "image/*" : "video/*"}
+                        accept={
+                          m.type === "image"
+                            ? "image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.tif,.tiff"
+                            : "video/*,audio/*,.mp4,.mov,.webm,.mkv,.avi,.m4v,.mpeg,.mpg,.3gp"
+                        }
                         className="hidden"
                         onChange={(e) => {
                           const f = e.target.files?.[0];

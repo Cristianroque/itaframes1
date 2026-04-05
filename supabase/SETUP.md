@@ -37,6 +37,10 @@ O login do painel é **só** via Supabase (`signInWithPassword`): email + senha 
 
 Após o SQL, confira em **Storage** se existe o bucket **`site-media`** (público para leitura).
 
+Para **vídeos e imagens grandes**, execute também uma vez o ficheiro `migrations/002_storage_large_uploads.sql` no **SQL Editor**. Isso sobe o limite por ficheiro no bucket (ex.: até 50 GiB por objeto). O **plano** do Supabase pode ainda impor um teto global — nesse caso veja **Project Settings → Storage** ou considere subir de plano.
+
+Uploads muito grandes podem demorar ou falhar por timeout do browser; nesses casos use um link externo (URL) ou aloje o vídeo noutro serviço e use **Vídeo (embed)** no projeto.
+
 ## 5. Testar
 
 1. `npm run dev` → `http://localhost:8080/login` (email e senha do passo 3).
